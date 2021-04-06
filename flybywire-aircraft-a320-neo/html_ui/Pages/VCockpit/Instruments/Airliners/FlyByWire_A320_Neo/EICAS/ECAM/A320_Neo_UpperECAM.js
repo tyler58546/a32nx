@@ -105,6 +105,7 @@ var A320_Neo_UpperECAM;
             this.iceNotDetTimer1 = new NXLogic_ConfirmNode(60);
             this.iceNotDetTimer2 = new NXLogic_ConfirmNode(130);
             this.predWsMemo = new NXLogic_MemoryNode(true);
+            this.toConfigTestButtonTimer = new NXLogic_TriggeredMonostableNode(1.5);
         }
         get templateID() {
             return "UpperECAMTemplate";
@@ -1614,13 +1615,11 @@ var A320_Neo_UpperECAM;
                 this.leftEcamMessagePanel.divMain.style.display = (showTOMemo || showLdgMemo) ? "none" : "block";
             }
 
+            this.updateTakeoffConfigWarnings(_deltaTime);
             let toConfigMomentary = false;
             if (SimVar.GetSimVarValue("L:A32NX_FWC_TOCONFIG", "Bool")) {
                 SimVar.SetSimVarValue("L:A32NX_FWC_TOCONFIG", "Bool", 0);
                 // FWC ESLD 1.0.180
-                if (this.isInFlightPhase(2, 9)) {
-                    this.updateTakeoffConfigWarnings(true);
-                }
                 toConfigMomentary = true;
             }
 
@@ -1675,10 +1674,6 @@ var A320_Neo_UpperECAM;
 
             this.statusReminder.setAttribute("visibility", (this.leftEcamMessagePanel.secondaryFailures.length > 0 && this.leftEcamMessagePanel.secondaryFailures.length == this.clearedSecondaryFailures.length) ? "visible" : "hidden");
 
-            if (this.fwcFlightPhase === 3) {
-                this.updateTakeoffConfigWarnings(false);
-            }
-
             if (this.fwcFlightPhase === 5) {
                 this.activeTakeoffConfigWarnings = [];
             }
@@ -1701,7 +1696,14 @@ var A320_Neo_UpperECAM;
                 SimVar.SetSimVarValue("ENG ON FIRE:2", "Bool", 0);
             }
         }
-        updateTakeoffConfigWarnings(_test) {
+        updateTakeoffConfigWarnings(_deltaTime) {
+            const testButtonPressed = SimVar.GetSimVarValue("L:A32NX_BTN_TOCONFIG", "bool");
+            const testButtonActive = this.toConfigTestButtonTimer.write(testButtonPressed, _deltaTime) || testButtonPressed;
+            const testActive = (this.fwcFlightPhase === 1 || this.fwcFlightPhase === 2 || this.fwcFlightPhase === 9) && testButtonActive;
+            if (!testActive && this.fwcFlightPhase !== 3 && this.fwcFlightPhase !== 4) {
+                this.activeTakeoffConfigWarnings = [];
+                return;
+            }
             const slatsLeft = SimVar.GetSimVarValue("LEADING EDGE FLAPS LEFT ANGLE", "degrees");
             const slatsRight = SimVar.GetSimVarValue("LEADING EDGE FLAPS RIGHT ANGLE", "degrees");
             const flapsLeft = SimVar.GetSimVarValue("TRAILING EDGE FLAPS LEFT ANGLE", "degrees");
@@ -1725,7 +1727,7 @@ var A320_Neo_UpperECAM;
             if (speedBrake > 0) {
                 this.activeTakeoffConfigWarnings.push("spd_brk");
             }
-            if (parkBrake && !_test) {
+            if (parkBrake && !testActive) {
                 this.activeTakeoffConfigWarnings.push("park_brake");
             }
             if (brakesHot) {
@@ -1738,7 +1740,7 @@ var A320_Neo_UpperECAM;
                 this.activeTakeoffConfigWarnings.push("to_speeds_disagree");
             }
 
-            if (_test && this.activeTakeoffConfigWarnings.length === 0) {
+            if (testActive && this.activeTakeoffConfigWarnings.length === 0) {
                 SimVar.SetSimVarValue("L:A32NX_TO_CONFIG_NORMAL", "Bool", 1);
             } else {
                 SimVar.SetSimVarValue("L:A32NX_TO_CONFIG_NORMAL", "Bool", 0);

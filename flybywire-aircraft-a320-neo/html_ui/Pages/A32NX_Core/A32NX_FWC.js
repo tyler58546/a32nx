@@ -84,13 +84,7 @@ class A32NX_FWC {
     }
 
     _updateButtons(_deltaTime) {
-        if (SimVar.GetSimVarValue("L:A32NX_BTN_TOCONFIG", "Bool")) {
-            SimVar.SetSimVarValue("L:A32NX_BTN_TOCONFIG", "Bool", 0);
-            this.toConfigTest = true;
-            SimVar.SetSimVarValue("L:A32NX_FWC_TOCONFIG", "Bool", 1);
-        } else if (this.toConfigTest) {
-            this.toConfigTest = false;
-        }
+        this.toConfigTest = SimVar.GetSimVarValue("L:A32NX_BTN_TOCONFIG", "Bool");
 
         let recall = false;
         if (SimVar.GetSimVarValue("L:A32NX_BTN_RCL", "Bool")) {
