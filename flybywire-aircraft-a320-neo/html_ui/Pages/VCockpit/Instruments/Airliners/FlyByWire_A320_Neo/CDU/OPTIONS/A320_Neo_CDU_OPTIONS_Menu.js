@@ -8,7 +8,7 @@ class CDU_OPTIONS_MainMenu {
             [""],
             ["<AOC", "REALISM>"],
             [""],
-            ["<CIDS"],
+            ["<CIDS", "HARDWARE>"],
             [""],
             ["<FMGC"],
             [""],
@@ -45,6 +45,14 @@ class CDU_OPTIONS_MainMenu {
         };
 
         mcdu.rightInputDelay[0] = () => {
+            return mcdu.getDelaySwitchPage();
+        };
+
+        mcdu.onRightInput[1] = () => {
+            CDU_OPTIONS_HARDWARE.ShowPage(mcdu);
+        };
+
+        mcdu.rightInputDelay[1] = () => {
             return mcdu.getDelaySwitchPage();
         };
 
